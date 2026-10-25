@@ -1,0 +1,20 @@
+{
+    "id": "thepiratebay",
+    "name": "The Pirate Bay",
+    "language": ["ita", "sub-ita", "eng", "multi"],
+    "active": true,
+    "thumbnail": "https://torrindex.net/images/tpb.jpg",
+    "banner": "https://torrindex.net/images/tpb.jpg",
+    "categories": ["movie", "tvshow", "torrent", "anime", "music", "games", "software"],
+    "not_active": ["include_in_newest"],
+    "settings": [
+        {
+            "id": "itaSearch",
+            "type": "bool",
+            "label": "Cerca contenuti in italiano",
+            "default": false,
+            "enabled": true,
+            "visible": true
+        }
+    ]
+}

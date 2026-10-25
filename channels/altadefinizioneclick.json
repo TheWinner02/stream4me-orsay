@@ -1,0 +1,19 @@
+{
+    "id": "altadefinizioneclick",
+    "name": "AltadefinizioneClick",
+    "active": true,
+    "language": [
+        "ita"
+    ],
+    "thumbnail": "altadefinizioneclick.png",
+    "bannermenu": "altadefinizioneciclk.png",
+    "categories": [
+        "tvshow",
+        "movie"
+    ],
+    "not_active": [
+        "include_in_newest_series"
+    ],
+    "settings": [],
+    "tiny": true
+}
