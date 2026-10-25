@@ -199,22 +199,34 @@ def episodios(item):
     itemlist = []
 
     data_page = get_data(item.url)    
-    seasons = data_page['props']['title']['seasons']
+    title_data = data_page.get('props', {}).get('title', {})
+    seasons = title_data.get('seasons', [])
+
+    # Estrai locandina serie come fallback per gli episodi
+    title_images = title_data.get('images', [])
+    poster_fn = next((img['filename'] for img in title_images if img.get('type') == 'poster'), None)
+    cover_fn = next((img['filename'] for img in title_images if img.get('type') in ['cover', 'background']), None)
+    default_thumb = ('https://cdn.streamingcommunityz.build/images/' + (poster_fn or cover_fn)) if (poster_fn or cover_fn) else (item.thumbnail or '')
 
     for se in seasons:
-        data_page = get_data(item.url + '/season-' + str(se['number']))
-        episodes = data_page['props']['loadedSeason']['episodes']
+        season_page = get_data(item.url + '/season-' + str(se['number']))
+        episodes = season_page.get('props', {}).get('loadedSeason', {}).get('episodes', [])
 
         for ep in episodes:
+            ep_images = ep.get('images', [])
+            ep_thumb = default_thumb
+            if ep_images and ep_images[0].get('filename'):
+                ep_thumb = 'https://cdn.streamingcommunityz.build/images/' + ep_images[0]['filename']
+
             itemlist.append(
                 item.clone(title=support.typo(str(se['number']) + 'x' + str(ep['number']).zfill(2) + ' - ' + support.cleantitle(ep['name']), 'bold'),
                            episode=ep['number'],
                            season=se['number'],
                            contentSeason=se['number'],
                            contentEpisodeNumber=ep['number'],
-                           thumbnail=ep['images'][0].get('original_url', item.thumbnail) if ep['images'] else item.thumbnail,
-                           contentThumbnail=item.thumbnail,
-                           fanart=item.fanart,
+                           thumbnail=ep_thumb,
+                           contentThumbnail=ep_thumb,
+                           fanart=default_thumb or item.fanart,
                            contentFanart=item.fanart,
                            plot=ep['plot'],
                            action='findvideos',

@@ -175,7 +175,14 @@ def live(item):
         try:
             channel_id = it.get('_id', '')
             guide_info = guide.get(channel_id, ['', ''])
-            thumb = (it.get('colorLogoPNG') or {}).get('path') or (it.get('solidLogoPNG') or {}).get('path') or (it.get('featuredImage') or {}).get('path', '')
+            candidates = [
+                (it.get('thumbnail') or {}).get('path'),
+                (it.get('colorLogoPNG') or {}).get('path'),
+                (it.get('solidLogoPNG') or {}).get('path'),
+                (it.get('featuredImage') or {}).get('path'),
+                (it.get('logo') or {}).get('path')
+            ]
+            thumb = next((p for p in candidates if p and 'missing' not in p.lower()), '')
             fanart = (it.get('featuredImage') or {}).get('path', '')
             stream_url = _build_live_url(channel_id)
 

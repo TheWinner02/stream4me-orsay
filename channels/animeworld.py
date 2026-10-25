@@ -158,9 +158,22 @@ def episodios(item):
     pagination = 50
     patronBlock= r'<div class="server\s*active\s*"(?P<block>.*?)(?:<div class="server|<link)'
     patron = r'<li[^>]*>\s*<a.*?href="(?P<url>[^"]+)"[^>]*>(?P<episode>[^-<]+)(?:-(?P<episode2>[^<]+))?'
+
+    # Estrai locandina e titolo anime per gli episodi
+    anime_thumb = support.match(data, patron=r'"image":\s*"([^"]+)"').match or support.match(data, patron=r'src="(https://img\.animeworld\.ac/locandine/[^"]+)"').match
+    anime_title = support.match(data, patron=r'<h1 class="title"[^>]*>([^<]+)</h1>').match or item.contentTitle or item.title or ''
+    anime_title = support.re.sub(r'\[[^\]]+\]', '', anime_title).strip()
+
     def itemHook(item):
         item.number = support.re.sub(r'\[[^\]]+\]', '', item.title)
-        item.title += support.typo(item.fulltitle,'-- bold')
+        num_clean = item.number.replace('-', '').strip()
+        if anime_title:
+            item.title = f"{anime_title} - Ep. {num_clean}"
+        else:
+            item.title = f"Episodio {num_clean}"
+        if anime_thumb:
+            item.thumbnail = anime_thumb
+            item.contentThumbnail = anime_thumb
         return item
     action='findvideos'    
     return locals()

@@ -209,6 +209,25 @@ def episodios(item):
     data = item.data if item.data else get_data(item.url)
     patron = (r'<a href="(?P<url>/episode/[^"]+)" class="ep-tile"'
               r'[^>]*title="Episodio (?P<episode>\d+)"')
+
+    # Estrai locandina e titolo serie
+    import html
+    anime_title = support.match(data, patron=r'<h1[^>]*>([^<]+)</h1>').match or item.contentTitle or item.title or ''
+    anime_title = html.unescape(anime_title).strip()
+    anime_thumb = support.match(data, patron=r'<img[^>]+src="(https://img\.saturncdn\.net/[^"]+)"').match or item.thumbnail or ''
+
+    def itemHook(item):
+        ep_num = getattr(item, 'episode', '') or item.title
+        ep_clean = str(ep_num).replace('Episodio', '').strip()
+        if anime_title:
+            item.title = f"{anime_title} - Ep. {ep_clean}"
+        else:
+            item.title = f"Episodio {ep_clean}"
+        if anime_thumb:
+            item.thumbnail = anime_thumb
+            item.contentThumbnail = anime_thumb
+        return item
+
     return locals()
 
 
