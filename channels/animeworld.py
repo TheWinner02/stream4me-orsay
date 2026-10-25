@@ -159,10 +159,13 @@ def episodios(item):
     patronBlock= r'<div class="server\s*active\s*"(?P<block>.*?)(?:<div class="server|<link)'
     patron = r'<li[^>]*>\s*<a.*?href="(?P<url>[^"]+)"[^>]*>(?P<episode>[^-<]+)(?:-(?P<episode2>[^<]+))?'
 
-    # Estrai locandina e titolo anime per gli episodi
+    # Estrai locandina, titolo anime e trama per gli episodi
+    import html
     anime_thumb = support.match(data, patron=r'"image":\s*"([^"]+)"').match or support.match(data, patron=r'src="(https://img\.animeworld\.ac/locandine/[^"]+)"').match
     anime_title = support.match(data, patron=r'<h1 class="title"[^>]*>([^<]+)</h1>').match or item.contentTitle or item.title or ''
     anime_title = support.re.sub(r'\[[^\]]+\]', '', anime_title).strip()
+    raw_plot = support.match(data, patron=r'<div class="desc"[^>]*>(.*?)</div>').match or support.match(data, patron=r'"description":\s*"([^"]+)"').match
+    anime_plot = html.unescape(support.re.sub(r'<[^>]+>', '', raw_plot)).strip() if raw_plot else (item.plot or '')
 
     def itemHook(item):
         item.number = support.re.sub(r'\[[^\]]+\]', '', item.title)
@@ -174,6 +177,11 @@ def episodios(item):
         if anime_thumb:
             item.thumbnail = anime_thumb
             item.contentThumbnail = anime_thumb
+        if anime_plot:
+            item.plot = anime_plot
+            item.contentPlot = anime_plot
+            if hasattr(item, 'infoLabels'):
+                item.infoLabels['plot'] = anime_plot
         return item
     action='findvideos'    
     return locals()

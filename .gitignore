@@ -15,3 +15,5 @@ cookies.dat
 userdata/
 tests/home/
 .idea/
+venv/
+venv

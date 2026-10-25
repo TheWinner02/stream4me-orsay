@@ -45,8 +45,16 @@ def mainlist(item):
 
 
 def get_data(url):
-    return jsontools.load(
-        support.scrapertools.decodeHtmlentities(support.match(url, patron='data-page="([^"]+)', debug=False).match))
+    resp = httptools.downloadpage(url)
+    m = support.scrapertools.find_single_match(resp.data, r'data-page="([^"]+)')
+    if not m:
+        m = support.scrapertools.find_single_match(resp.data, r"data-page='([^']+)'")
+    if m:
+        try:
+            return jsontools.load(support.scrapertools.decodeHtmlentities(m)) or {}
+        except Exception:
+            pass
+    return {}
 
 
 def genres(item):
@@ -109,16 +117,27 @@ def peliculas(item):
     items = []
     recordlist = []
     page = item.page if item.page else 0
-    data_page = get_data(item.url)
 
     if item.records:
         records = item.records
-    elif item.genre or item.search or (item.args and item.args == -1):
-        records = data_page['props']['titles']
     else:
-        if not item.args:
-            item.args = 0
-        records = data_page['props']['sliders'][item.args]['titles']
+        data_page = get_data(item.url)
+        if not data_page or 'props' not in data_page:
+            return []
+        if item.genre or item.search or (item.args and item.args == -1):
+            records = data_page.get('props', {}).get('titles', [])
+        else:
+            if not item.args:
+                item.args = 0
+            try:
+                arg_idx = int(item.args)
+            except Exception:
+                arg_idx = 0
+            sliders = data_page.get('props', {}).get('sliders', [])
+            if arg_idx < len(sliders):
+                records = sliders[arg_idx].get('titles', [])
+            else:
+                records = []
 
     if records and type(records[0]) == list:
         js = []
@@ -170,6 +189,17 @@ def makeItem(n, it, item):
         except:
             pass
 
+    # Estrai trama direttamente da translations o dal campo plot
+    plot_val = it.get('plot') or next((tr['value'] for tr in it.get('translations', []) if tr.get('key') == 'plot' and tr.get('value')), '')
+    if plot_val:
+        itm.plot = plot_val
+        itm.contentPlot = plot_val
+        if hasattr(itm, 'infoLabels'):
+            itm.infoLabels['plot'] = plot_val
+    if it.get('score'):
+        if hasattr(itm, 'infoLabels'):
+            itm.infoLabels['rating'] = str(it['score'])
+
     if itm.contentType == 'movie':
         itm.fulltitle = itm.show = itm.contentTitle = title
         itm.action = 'findvideos'
@@ -218,6 +248,10 @@ def episodios(item):
             if ep_images and ep_images[0].get('filename'):
                 ep_thumb = 'https://cdn.streamingcommunityz.build/images/' + ep_images[0]['filename']
 
+            # Fallback trama: trama specifica episodio -> trama serie
+            series_plot = title_data.get('plot') or next((tr['value'] for tr in title_data.get('translations', []) if tr.get('key') == 'plot' and tr.get('value')), '') or item.plot or ''
+            ep_plot = ep.get('plot') or next((tr['value'] for tr in ep.get('translations', []) if tr.get('key') == 'plot' and tr.get('value')), '') or series_plot
+
             itemlist.append(
                 item.clone(title=support.typo(str(se['number']) + 'x' + str(ep['number']).zfill(2) + ' - ' + support.cleantitle(ep['name']), 'bold'),
                            episode=ep['number'],
@@ -228,7 +262,7 @@ def episodios(item):
                            contentThumbnail=ep_thumb,
                            fanart=default_thumb or item.fanart,
                            contentFanart=item.fanart,
-                           plot=ep['plot'],
+                           plot=ep_plot,
                            action='findvideos',
                            contentType='episode',
                            contentSerieName=item.fulltitle,

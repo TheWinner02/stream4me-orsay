@@ -210,11 +210,13 @@ def episodios(item):
     patron = (r'<a href="(?P<url>/episode/[^"]+)" class="ep-tile"'
               r'[^>]*title="Episodio (?P<episode>\d+)"')
 
-    # Estrai locandina e titolo serie
+    # Estrai locandina, titolo serie e trama
     import html
     anime_title = support.match(data, patron=r'<h1[^>]*>([^<]+)</h1>').match or item.contentTitle or item.title or ''
     anime_title = html.unescape(anime_title).strip()
     anime_thumb = support.match(data, patron=r'<img[^>]+src="(https://img\.saturncdn\.net/[^"]+)"').match or item.thumbnail or ''
+    raw_plot = support.match(data, patron=r'(?s)Trama</h2>\s*<div[^>]*>(.*?)</div>').match
+    anime_plot = html.unescape(support.re.sub(r'<[^>]+>', '', raw_plot)).strip() if raw_plot else (item.plot or '')
 
     def itemHook(item):
         ep_num = getattr(item, 'episode', '') or item.title
@@ -226,6 +228,11 @@ def episodios(item):
         if anime_thumb:
             item.thumbnail = anime_thumb
             item.contentThumbnail = anime_thumb
+        if anime_plot:
+            item.plot = anime_plot
+            item.contentPlot = anime_plot
+            if hasattr(item, 'infoLabels'):
+                item.infoLabels['plot'] = anime_plot
         return item
 
     return locals()

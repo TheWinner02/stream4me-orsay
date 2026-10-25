@@ -552,7 +552,10 @@ def scrape(func):
         sceneTitle = args.get('sceneTitle')
         group = args.get('group', False)
         downloadEnabled = args.get('downloadEnabled', True)
-        pag = item.page if item.page else 1  # pagination
+        try:
+            pag = int(item.page) if item.page else 1  # pagination
+        except (ValueError, TypeError):
+            pag = 1
         matches = []
         nextPageUrl = args.get('nextPageUrl', '')
 
