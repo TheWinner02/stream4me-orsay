@@ -4,27 +4,23 @@ on:
 
 jobs:
   tests:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4.3.0
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v5
         with:
-          python-version: 3.9
+          python-version: '3.9'
 
       - name: Run tests
         run: |
+          chmod +x ./tests/run.sh
           ./tests/run.sh
 
-      - name: Commit & Push changes
-        uses: dmnemec/copy_file_to_another_repo_action@main
-        env:
-          API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
+      - name: Upload Test Report
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          source_file: 'reports'
-          destination_repo: 'stream4me/stream4me.github.io'
-          user_email: 'tests@s4me.bot'
-          user_name: 'bot'
-          commit_message: 'Test suite'
+          name: test-reports
+          path: reports/
